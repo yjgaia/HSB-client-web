@@ -54,8 +54,8 @@ Ext.application({
                 xtype: 'panel',
 
                 //give it a fixed witdh and height
-                width: 350,
-                height: 370,
+                width: '100%',
+                height: '100%',
 
                 //make it centered
                 centered: true,
@@ -82,27 +82,51 @@ Ext.application({
      * Returns a configuration object to be used when adding the list to the viewport.
      */
     getListConfiguration: function() {
-    	return Ext.create('Ext.List', {
-    	    fullscreen: true,
+        //create a store instance
+        var store = Ext.create('Ext.data.Store', {
+            //give the store some fields
+            fields: ['content','writerId', 'writerUsername','writerNickname','writeDate','commentCount','id','version'],
 
-    	    store: {
-    	        fields: ['name'],
-    	        data: [
-    	            {name: 'Cowper'},
-    	            {name: 'Everett'},
-    	            {name: 'University'},
-    	            {name: 'Forest'}
-    	        ]
-    	    },
+            
 
-    	    itemTpl: '{name}',
+            //autoload the data from the server
+            autoLoad: true,
 
-    	    listeners: {
-    	        select: function(view, record) {
-    	            Ext.Msg.alert('Selected!', 'You selected ' + record.get('name'));
-    	        }
-    	    }
-    	});
+            
 
+            //setup the proxy for the store to use an ajax proxy and give it a url to load
+            //the local contacts.json file
+            proxy: {
+                type: 'ajax',
+                url: 'contacts.json'
+            }
+        });
+
+        return {
+            //give it an xtype of list for the list component
+            xtype: 'list',
+
+            //set the itemtpl to show the fields for the store
+            itemTpl: [
+                      '<div><b>{writerNickname}</b><br/>',
+                      '{content} ',
+                      '{writeDate}</div>',
+                      '<div style="text-align:right">댓글 {commentCount}개</div>'
+                      ],
+
+            //enable disclosure icons
+            disclosure: false,
+
+            //group the list
+            grouped: false,
+
+            //enable the indexBar
+            indexBar: false,
+
+            
+
+            //bind the store to this list
+            store: store
+        };
     }
 });

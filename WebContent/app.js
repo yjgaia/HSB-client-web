@@ -83,7 +83,7 @@ Ext.application({
         });
         
         post('http://hsb1.anak.kr:8080/HSB/user/auth', {
-			username: 'test'
+			username: 'test2'
 			, password: 'test'
 		}, function(data) {
 			get('http://hsb1.anak.kr:8080/HSB/user/timeline', {

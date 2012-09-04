@@ -82,11 +82,19 @@ Ext.application({
             fields: ['content','writerId', 'writerUsername','writerNickname','writeDate','commentCount','id','version'],
         });
         
-        get('http://hsb1.anak.kr:8080/HSB/user/timeline', {
-			secureKey: '3de8ddd6b6bdeeffd32e17a462575f40bbb5fcad'
+        post('http://hsb1.anak.kr:8080/HSB/user/auth', {
+			username: 'test'
+			, password: 'test'
 		}, function(data) {
-			store.add(data.list);
+			get('http://hsb1.anak.kr:8080/HSB/user/timeline', {
+				secureKey: data.data.generatedSecureKey
+			}, function(data) {
+				store.add(data.list);
+			});
+			 
 		});
+        
+       
         
         return {
             //give it an xtype of list for the list component

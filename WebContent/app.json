@@ -1,0 +1,52 @@
+{
+    "name": "List",
+    "js": [
+        {
+            "path": "sencha-touch-2.0.1.1/sencha-touch-all-debug.js"
+        },
+        {
+            "path": "https://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"
+        },
+        {
+            "path": "app.js",
+            "update": "delta"
+        },
+        {
+        	"path": "p.js",
+            "update": "delta"
+        }
+    ],
+    "css": [
+        {
+            "path": "sencha-touch-2.0.1.1/resources/css/sencha-touch.css",
+            "update": "delta"
+        }
+    ],
+    "appCache": {
+        "cache": [
+            "index.html"
+        ],
+        "network": [
+            "*"
+        ],
+        "fallback": []
+    },
+    "extras": [
+        "resources/icons",
+        "resources/loading"
+    ],
+    "archivePath": "archive",
+    "buildPaths": {
+        "testing": "sencha-touch-2.0.1.1/deploy/testing/list",
+        "production": "sencha-touch-2.0.1.1/deploy/production/list",
+        "package": "sencha-touch-2.0.1.1/deploy/package/list",
+        "native": "sencha-touch-2.0.1.1/deploy/native/list"
+    },
+    "buildOptions": {
+        "product": "touch",
+        "minVersion": 3,
+        "debug": false,
+        "logger": "no"
+    },
+    "id": "3a867610-670a-11e1-a90e-4318029d18bb"
+}

@@ -38,6 +38,28 @@ Ext.application({
     launch: function() {
         //get the configuration for the list
         var listConfiguration = this.getListConfiguration();
+        var rootPanel = Ext.create("Ext.Panel",{
+        	layout:"card",
+        	items:[listConfiguration,{
+                xtype: 'panel',
+                itemId: 'postPreview',
+                tpl: [
+                    '<div style="float: left; width: 60px;"><img src="{profile_image_url}" /></div><div style="position: relative; margin-left: 64px;">',
+                    '     {name}',
+                    '     <br />',
+                    '     <div style="color: gray; font-size: 80%;">',
+                    '{description}</div>',
+                    '</div>',
+                    '',
+                    '<div style="clear: both; margin-top: 6px; bacground-color: white; padding: 6px; border-radius: 10px;">',
+                    '  {text}',
+                    '  <br />',
+                    '  <div style="color: gray; font-size: 80%; padding-top: 6px;">Posted: {created_at:date("d M Y h:m")}</div>',
+                    '</div>'
+                ],
+                scrollable: true
+            }]
+        });
 
         //if the device is not a phone, we want to create a centered panel and put the list
         //into that
@@ -64,17 +86,19 @@ Ext.application({
                 layout: 'fit',
 
                 //insert the listConfiguration as an item into this panel
-                items: [listConfiguration]
+                items: [rootPanel]
             });
         } else {
             //if we are a phone, simply add the list as an item to the viewport
-            Ext.Viewport.add(listConfiguration);
+            Ext.Viewport.add(rootPanel);
         }
     },
+ 
 
     /**
      * Returns a configuration object to be used when adding the list to the viewport.
      */
+  
     getListConfiguration: function() {
         //create a store instance
         var store = Ext.create('Ext.data.Store', {
@@ -99,6 +123,7 @@ Ext.application({
         return {
             //give it an xtype of list for the list component
             xtype: 'list',
+            itemId:'postList',
 
             //set the itemtpl to show the fields for the store
             itemTpl: [
@@ -108,19 +133,14 @@ Ext.application({
                       '<div style="text-align:right">댓글 {commentCount}개</div>'
                       ],
 
-            //enable disclosure icons
-            disclosure: false,
-
-            //group the list
-            grouped: false,
-
-            //enable the indexBar
-            indexBar: false,
-
-            
-
             //bind the store to this list
-            store: store
+            store: store,
+            listeners:[{
+                fn: function(dataview, index, target, record, e, options){
+                	alert(record.content);
+                },
+                event: 'itemtap'
+            }]
         };
     }
 });

@@ -6,6 +6,7 @@
  * it has a disclosure button so you can disclose more information for a list item.
  */
 
+var rootPanel;
 //define the application
 Ext.application({
     //define the startupscreens for tablet and phone, as well as the icon
@@ -35,27 +36,40 @@ Ext.application({
      *
      * If the user is not on a phone, we wrap the list inside a panel which is centered on the page.
      */
+  
     launch: function() {
         //get the configuration for the list
         var listConfiguration = this.getListConfiguration();
-        var rootPanel = Ext.create("Ext.Panel",{
+        rootPanel = Ext.create("Ext.Panel",{
         	layout:"card",
-        	items:[listConfiguration,{
+        	items:[ {
+                xtype: 'toolbar',
+                docked: 'top',
+                title: 'News Feed',
+                items: [
+                    {
+                        xtype: 'button',
+                        hidden: true,
+                        itemId: 'backBtn',
+                        ui: 'back',
+                        text: 'Back',
+                        listeners:[{
+                            fn: function(button, e, options) {
+                                button.hide();
+
+                                rootPanel.setActiveItem(0);
+
+                                rootPanel.down("#postList").deselectAll();
+                            },
+                            event: 'tap'
+                        }]
+                    }
+                ]
+            },listConfiguration,{
                 xtype: 'panel',
                 itemId: 'postPreview',
                 tpl: [
-                    '<div style="float: left; width: 60px;"><img src="{profile_image_url}" /></div><div style="position: relative; margin-left: 64px;">',
-                    '     {name}',
-                    '     <br />',
-                    '     <div style="color: gray; font-size: 80%;">',
-                    '{description}</div>',
-                    '</div>',
-                    '',
-                    '<div style="clear: both; margin-top: 6px; bacground-color: white; padding: 6px; border-radius: 10px;">',
-                    '  {text}',
-                    '  <br />',
-                    '  <div style="color: gray; font-size: 80%; padding-top: 6px;">Posted: {created_at:date("d M Y h:m")}</div>',
-                    '</div>'
+                    '<div>{content}</div>'
                 ],
                 scrollable: true
             }]
@@ -98,7 +112,7 @@ Ext.application({
     /**
      * Returns a configuration object to be used when adding the list to the viewport.
      */
-  
+
     getListConfiguration: function() {
         //create a store instance
         var store = Ext.create('Ext.data.Store', {
@@ -137,7 +151,11 @@ Ext.application({
             store: store,
             listeners:[{
                 fn: function(dataview, index, target, record, e, options){
-                	alert(record.content);
+                	
+                	rootPanel.setActiveItem(2);
+                	rootPanel.down("#backBtn").show();
+
+                	rootPanel.down("#postPreview").setData(record.data);
                 },
                 event: 'itemtap'
             }]

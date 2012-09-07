@@ -11,12 +11,26 @@ var commentStore;
 var commentList;
 var store;
 var articleId;
-function getTimeLineList(){
+var followBtn=false;
+var unfollowBtn=false;
+var postBtn=false;
+var loginUser='test2';
+var nowUser;
+var timelineTitle='Timeline';
+function getTimeLineList(userId){
+	var url;
+	if(userId!=null){
+		url='http://hsb1.anak.kr:8080/HSB/'+userId;
+		nowUser=userId;
+	}else{
+		url='http://hsb1.anak.kr:8080/HSB/user/timeline';
+		nowUser=loginUser;
+	}
 	post('http://hsb1.anak.kr:8080/HSB/user/auth', {
-		username: 'test2'
+		username: loginUser
 		, password: 'test'
 	}, function(data) {
-		get('http://hsb1.anak.kr:8080/HSB/user/timeline', {
+		get(url, {
 			secureKey: data.data.generatedSecureKey
 		}, function(data) {
 			store.removeAll(false);
@@ -24,6 +38,50 @@ function getTimeLineList(){
 		});
 		 
 	});
+}
+function showTimeLine(){
+	rootPanel.getLayout().setAnimation('pop');
+	nowUser=loginUser;
+	getTimeLineList();
+	rootPanel.down("#title").setTitle(timelineTitle);
+	rootPanel.setActiveItem(0);
+	rootPanel.down("#backBtn").hide();
+	followBtn=false;
+	rootPanel.down("#followBtn").hide();
+	unfollowBtn=false;
+	rootPanel.down("#unfollowBtn").hide();
+	postBtn=true;
+	rootPanel.down("#postBtn").show();
+}
+function showUserHome(userId){
+	rootPanel.getLayout().setAnimation('pop');
+	getTimeLineList(userId);
+	rootPanel.setActiveItem(0);
+	rootPanel.down("#backBtn").hide();
+	var isHost=false;// 본인인지 확인 
+	if(loginUser==userId) isHost=true;
+	var isFollow=true; //팔로우 관계 체크 모듈 추가 해야함 
+	if(isHost){ //본인 일시 
+		followBtn=false;
+		rootPanel.down("#followBtn").hide();
+		unfollowBtn=false;
+		rootPanel.down("#unfollowBtn").hide();
+		postBtn=true;
+		rootPanel.down("#postBtn").show();
+		
+	}else{ 
+		if(isFollow){ //팔로우 관계일 시 
+			unfollowBtn=true;
+			rootPanel.down("#unfollowBtn").show();
+		}else{
+			followBtn=true;
+			rootPanel.down("#followBtn").show();
+		}
+		postBtn=false;
+		rootPanel.down("#postBtn").hide();
+	}
+	rootPanel.down("#title").setTitle(userId);
+	
 }
 //define the application
 Ext.application({
@@ -95,13 +153,13 @@ Ext.application({
             	xtype:'panel',
            	 itemId: 'postPreview',
            	tpl:[
-           	     '<div><b>{writerNickname}</b><br/>{content}</div>'
+           	     '<div><a href="javascript:showUserHome(\'{writerUsername}\')"><b>{writerNickname}</b></a><br/>{content}</div>'
            	]
         	},commentList,formPanel,{xtype:'button',text:'등록',listeners:[{
                 fn: function(button, e, options) {
                 	var content=formPanel.down("#commentContent").getValue();
                 	post('http://hsb1.anak.kr:8080/HSB/user/auth', {
-            			username: 'test2'
+            			username: loginUser
             			, password: 'test'
             		}, function(data) {
             			post('http://hsb1.anak.kr:8080/HSB/article/'+articleId+'/comment', {
@@ -129,10 +187,10 @@ Ext.application({
             		fn:function(button,e,options){
             			var content=postPanel.down('#postContent').getValue();
             			post('http://hsb1.anak.kr:8080/HSB/user/auth', {
-                			username: 'test2'
+                			username: loginUser
                 			, password: 'test'
                 		}, function(data) {
-                			post('http://hsb1.anak.kr:8080/HSB/test2', {
+                			post('http://hsb1.anak.kr:8080/HSB/'+loginUser, {
                 				secureKey: data.data.generatedSecureKey,
                 				content:content
                 			}, function(data) {
@@ -153,7 +211,8 @@ Ext.application({
         	items:[ {
                 xtype: 'toolbar',
                 docked: 'top',
-                title: '뉴스피드',
+                title: timelineTitle,
+                itemId: 'title',
                 items: [
                     {
                         xtype: 'button',
@@ -166,7 +225,15 @@ Ext.application({
                             	rootPanel.getLayout().setAnimation({type: "slide", direction: "right"});
                                 button.hide();	
                                 rootPanel.setActiveItem(0);
-                                rootPanel.down("#postBtn").show();
+                                if(followBtn){
+                                	rootPanel.down("#followBtn").show();
+                                }
+                                if(unfollowBtn){
+                                	rootPanel.down("#unfollowBtn").show();
+                                }
+                                if(postBtn){
+                                	rootPanel.down("#postBtn").show();
+                                }
                                 rootPanel.down("#postList").deselectAll();
                             },
                             event: 'tap'
@@ -185,7 +252,53 @@ Ext.application({
                     		},
                     		event:'tap'
                     	}]
-                    }
+                    },{
+                		xtype:'button',
+                		itemId:'followBtn',
+                		ui:'action',
+                		hidden:true,
+                		text:'Follow',
+                		listeners:[{
+                			fn:function(button,e,options){
+                				post('http://hsb1.anak.kr:8080/HSB/user/auth', {
+                					username: loginUser
+                					, password: 'test'
+                				}, function(data) {
+                					post('http://hsb1.anak.kr:8080/HSB/'+nowUser+'/follow', {
+                						secureKey: data.data.generatedSecureKey
+                					}, function(data) {
+                						console.log(data);
+                						alert(nowUser+'님을 팔로우합니다.');
+                						showTimeLine();
+                					});
+                					 
+                				});
+                			},event:'tap'
+                		}]
+                	},{
+                		xtype:'button',
+                		itemId:'unfollowBtn',
+                		ui:'action',
+                		hidden:true,
+                		text:'unFollow',
+                		listeners:[{
+                			fn:function(button,e,options){
+                				post('http://hsb1.anak.kr:8080/HSB/user/auth', {
+                					username: loginUser
+                					, password: 'test'
+                				}, function(data) {
+                					del('http://hsb1.anak.kr:8080/HSB/'+nowUser+'/follow', {
+                						secureKey: data.data.generatedSecureKey
+                					}, function(data) {
+                						console.log(data);
+                						alert(nowUser+'님을 언팔로우합니다.');
+                						showTimeLine();
+                					});
+                					 
+                				});
+                			},event:'tap'
+                		}]
+                	}
                 ]
             },listConfiguration,contentPanel,postPanel]
         });
@@ -236,7 +349,7 @@ Ext.application({
         });
         
         getTimeLineList();
-        
+        postBtn=true;
        
         
         return {

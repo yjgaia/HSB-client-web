@@ -82,7 +82,7 @@ Ext.application({
            	 itemId: 'postPreview',
            	tpl:[
            	     '<div><b>{writerNickname}</b><br/>{content}</div>'
-           	],style : "background-color :green;"
+           	]
         	},commentList,formPanel,{xtype:'button',text:'등록',listeners:[{
                 fn: function(button, e, options) {
                 	var content=formPanel.down("#commentContent").getValue();

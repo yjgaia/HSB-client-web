@@ -7,6 +7,10 @@
  */
 
 var rootPanel;
+var commentStore;
+var commentList;
+var store;
+var articleId;
 //define the application
 Ext.application({
     //define the startupscreens for tablet and phone, as well as the icon
@@ -40,12 +44,71 @@ Ext.application({
     launch: function() {
         //get the configuration for the list
         var listConfiguration = this.getListConfiguration();
+        commentStore=Ext.create('Ext.data.Store', {
+            //give the store some fields
+            fields: ['id','content','targetArticleId','version','writeDate','writerId','writerNickname','writerUsername'],
+            autoLoad: true
+        });
+        var formPanel = Ext.create('Ext.Panel', {
+          
+
+            items: [{
+                xtype: 'fieldset',
+                items: [
+                    {
+                    	itemId:'commentContent',
+                        xtype: 'textfield',
+                        name : 'content',
+                        label: '댓글'
+                    }
+                ]
+            }]
+        });
+        commentList=Ext.create("Ext.dataview.List",{
+        	width:320,
+        	height:200,
+        	itemId:'commentList',
+           	itemTpl: [
+                        '<div><b>{writerNickname}</b> ',
+                         '{content}</div>'
+               ],
+               store:commentStore,
+               style : "background-color :yellow;"
+        });
+        var contentPanel = Ext.create("Ext.Panel",{
+        	layout:'vbox',
+        	items:[{
+            	xtype:'panel',
+           	 itemId: 'postPreview',
+           	tpl:[
+           	     '<div><b>{writerNickname}</b><br/>{content}</div>'
+           	],style : "background-color :green;"
+        	},commentList,formPanel,{xtype:'button',text:'등록',listeners:[{
+                fn: function(button, e, options) {
+                	var content=formPanel.down("#commentContent").getValue();
+                	post('http://hsb1.anak.kr:8080/HSB/user/auth', {
+            			username: 'test2'
+            			, password: 'test'
+            		}, function(data) {
+            			post('http://hsb1.anak.kr:8080/HSB/article/'+articleId+'/comment', {
+            				secureKey: data.data.generatedSecureKey,
+            				content:content
+            			}, function(data) {
+            				console.log(data);
+            				commentStore.add(data.data);
+            			});
+            			 
+            		});
+                },
+                event: 'tap'
+            }]}]
+        });
         rootPanel = Ext.create("Ext.Panel",{
         	layout:"card",
         	items:[ {
                 xtype: 'toolbar',
                 docked: 'top',
-                title: 'News Feed',
+                title: '뉴스피드',
                 items: [
                     {
                         xtype: 'button',
@@ -55,8 +118,8 @@ Ext.application({
                         text: 'Back',
                         listeners:[{
                             fn: function(button, e, options) {
-                                button.hide();
-
+                            	rootPanel.getLayout().setAnimation({type: "slide", direction: "right"});
+                                button.hide();	
                                 rootPanel.setActiveItem(0);
 
                                 rootPanel.down("#postList").deselectAll();
@@ -65,14 +128,7 @@ Ext.application({
                         }]
                     }
                 ]
-            },listConfiguration,{
-                xtype: 'panel',
-                itemId: 'postPreview',
-                tpl: [
-                    '<div>{content}</div>'
-                ],
-                scrollable: true
-            }]
+            },listConfiguration,contentPanel]
         });
 
         //if the device is not a phone, we want to create a centered panel and put the list
@@ -115,7 +171,7 @@ Ext.application({
 
     getListConfiguration: function() {
         //create a store instance
-        var store = Ext.create('Ext.data.Store', {
+        store = Ext.create('Ext.data.Store', {
             //give the store some fields
             fields: ['content','writerId', 'writerUsername','writerNickname','writeDate','commentCount','id','version'],
         });
@@ -151,11 +207,19 @@ Ext.application({
             store: store,
             listeners:[{
                 fn: function(dataview, index, target, record, e, options){
-                	
+                	rootPanel.getLayout().setAnimation({type: "slide", direction: "left"});
                 	rootPanel.setActiveItem(2);
                 	rootPanel.down("#backBtn").show();
-
                 	rootPanel.down("#postPreview").setData(record.data);
+                	articleId= record.data.id;
+                	commentStore.removeAll(false);
+                	//댓글 가져오기
+                	get('http://hsb1.anak.kr:8080/HSB/article/'+articleId+'/comments', {
+        			}, function(data) {
+        				console.log(data.list);
+        				commentStore.add(data.list);
+        			});
+                	
                 },
                 event: 'itemtap'
             }]

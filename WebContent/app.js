@@ -11,6 +11,20 @@ var commentStore;
 var commentList;
 var store;
 var articleId;
+function getTimeLineList(){
+	post('http://hsb1.anak.kr:8080/HSB/user/auth', {
+		username: 'test2'
+		, password: 'test'
+	}, function(data) {
+		get('http://hsb1.anak.kr:8080/HSB/user/timeline', {
+			secureKey: data.data.generatedSecureKey
+		}, function(data) {
+			store.removeAll(false);
+			store.add(data.list);
+		});
+		 
+	});
+}
 //define the application
 Ext.application({
     //define the startupscreens for tablet and phone, as well as the icon
@@ -94,7 +108,6 @@ Ext.application({
             				secureKey: data.data.generatedSecureKey,
             				content:content
             			}, function(data) {
-            				console.log(data);
             				commentStore.add(data.data);
             			});
             			 
@@ -102,6 +115,38 @@ Ext.application({
                 },
                 event: 'tap'
             }]}]
+        });
+        var postPanel=Ext.create("Ext.Panel",{
+        	items:[{
+        		itemId:'postContent',
+                xtype: 'textareafield',
+                maxRows: 4,
+                placeHolder:'무슨 생각을 하고 계시나요?'
+            },{
+            	xtype:'button',
+            	text:'Post',
+            	listeners:[{
+            		fn:function(button,e,options){
+            			var content=postPanel.down('#postContent').getValue();
+            			post('http://hsb1.anak.kr:8080/HSB/user/auth', {
+                			username: 'test2'
+                			, password: 'test'
+                		}, function(data) {
+                			post('http://hsb1.anak.kr:8080/HSB/test2', {
+                				secureKey: data.data.generatedSecureKey,
+                				content:content
+                			}, function(data) {
+                				rootPanel.setActiveItem(0);
+                                rootPanel.down("#postBtn").show();
+                                rootPanel.down("#backBtn").hide();
+                                getTimeLineList();
+                			});
+                			 
+                		});
+            		},
+            		event:'tap'
+            	}]
+            }]
         });
         rootPanel = Ext.create("Ext.Panel",{
         	layout:"card",
@@ -121,14 +166,28 @@ Ext.application({
                             	rootPanel.getLayout().setAnimation({type: "slide", direction: "right"});
                                 button.hide();	
                                 rootPanel.setActiveItem(0);
-
+                                rootPanel.down("#postBtn").show();
                                 rootPanel.down("#postList").deselectAll();
                             },
                             event: 'tap'
                         }]
+                    },{
+                    	xtype:'button',
+                    	itemId:'postBtn',
+                    	ui:'action',
+                    	text: 'Write',
+                    	listeners:[{
+                    		fn: function(button,e,options){
+                    			rootPanel.getLayout().setAnimation({type: "slide", direction: "left"});
+                    			button.hide();
+                    			rootPanel.down("#backBtn").show();
+                    			rootPanel.setActiveItem(2);
+                    		},
+                    		event:'tap'
+                    	}]
                     }
                 ]
-            },listConfiguration,contentPanel]
+            },listConfiguration,contentPanel,postPanel]
         });
 
         //if the device is not a phone, we want to create a centered panel and put the list
@@ -176,17 +235,7 @@ Ext.application({
             fields: ['content','writerId', 'writerUsername','writerNickname','writeDate','commentCount','id','version'],
         });
         
-        post('http://hsb1.anak.kr:8080/HSB/user/auth', {
-			username: 'test2'
-			, password: 'test'
-		}, function(data) {
-			get('http://hsb1.anak.kr:8080/HSB/user/timeline', {
-				secureKey: data.data.generatedSecureKey
-			}, function(data) {
-				store.add(data.list);
-			});
-			 
-		});
+        getTimeLineList();
         
        
         
@@ -208,8 +257,9 @@ Ext.application({
             listeners:[{
                 fn: function(dataview, index, target, record, e, options){
                 	rootPanel.getLayout().setAnimation({type: "slide", direction: "left"});
-                	rootPanel.setActiveItem(2);
+                	rootPanel.setActiveItem(1);
                 	rootPanel.down("#backBtn").show();
+                	rootPanel.down("#postBtn").hide();
                 	rootPanel.down("#postPreview").setData(record.data);
                 	articleId= record.data.id;
                 	commentStore.removeAll(false);

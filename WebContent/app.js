@@ -167,6 +167,7 @@ Ext.application({
             				content:content
             			}, function(data) {
             				commentStore.add(data.data);
+            				formPanel.down("#commentContent").setValue("");
             			});
             			 
             		});

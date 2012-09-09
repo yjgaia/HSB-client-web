@@ -6,6 +6,7 @@
  * it has a disclosure button so you can disclose more information for a list item.
  */
 
+var requestUrl='http://hsb1.anak.kr:8080/HSB';
 var rootPanel;
 var commentStore;
 var commentList;
@@ -14,37 +15,35 @@ var articleId;
 var followBtn=false;
 var unfollowBtn=false;
 var postBtn=false;
-var loginUser='test2';
+var loginUser;
+var generatedSecureKey;
 var nowUser;
 var timelineTitle='Timeline';
 function getTimeLineList(userId){
 	var url;
 	if(userId!=null){
-		url='http://hsb1.anak.kr:8080/HSB/'+userId;
+		url=requestUrl+'/'+userId;
 		nowUser=userId;
 	}else{
-		url='http://hsb1.anak.kr:8080/HSB/user/timeline';
+		url=requestUrl+'/user/timeline';
 		nowUser=loginUser;
 	}
-	post('http://hsb1.anak.kr:8080/HSB/user/auth', {
-		username: loginUser
-		, password: 'test'
+	
+	get(url, {
+		secureKey: generatedSecureKey
 	}, function(data) {
-		get(url, {
-			secureKey: data.data.generatedSecureKey
-		}, function(data) {
-			store.removeAll(false);
-			store.add(data.list);
-		});
-		 
+		store.removeAll(false);
+		store.add(data.list);
 	});
+		 
+	
 }
 function showTimeLine(){
 	rootPanel.getLayout().setAnimation('pop');
 	nowUser=loginUser;
 	getTimeLineList();
 	rootPanel.down("#title").setTitle(timelineTitle);
-	rootPanel.setActiveItem(0);
+	rootPanel.setActiveItem(1);
 	rootPanel.down("#backBtn").hide();
 	followBtn=false;
 	rootPanel.down("#followBtn").hide();
@@ -56,11 +55,11 @@ function showTimeLine(){
 function showUserHome(userId){
 	rootPanel.getLayout().setAnimation('pop');
 	getTimeLineList(userId);
-	rootPanel.setActiveItem(0);
+	rootPanel.setActiveItem(1);
 	rootPanel.down("#backBtn").hide();
 	var isHost=false;// 본인인지 확인 
 	if(loginUser==userId) isHost=true;
-	var isFollow=true; //팔로우 관계 체크 모듈 추가 해야함 
+	var isFollow=false; //팔로우 관계 체크 모듈 추가 해야함 
 	if(isHost){ //본인 일시 
 		followBtn=false;
 		rootPanel.down("#followBtn").hide();
@@ -114,6 +113,42 @@ Ext.application({
      */
   
     launch: function() {
+    	var loginPanel = Ext.create('Ext.Panel',{
+    		items: [
+    	            {
+    	            	itemId:'username',
+    	                xtype: 'textfield',
+    	                label: 'Username'
+    	            },
+    	            {
+    	            	itemId:'password',
+    	                xtype: 'passwordfield',
+    	                label: 'Password'
+    	            },
+    	            {
+    	                xtype: 'button',
+    	                text: 'Login',
+    	                listeners:[{
+                            fn: function(button, e, options) {
+                            	var username=loginPanel.down('#username').getValue();
+                            	var password=loginPanel.down('#password').getValue();
+                            	post(requestUrl+'/user/auth', {
+                            		username: username
+                            		, password: password
+                            	}, function(data) {
+                            		loginUser=data.data.username;
+                            		generatedSecureKey=data.data.generatedSecureKey;
+                            		console.log(loginUser+','+generatedSecureKey);
+                            		showTimeLine();
+                            		rootPanel.setActiveItem(1);
+                            		rootPanel.down("#moveBtn").show();
+                            	});
+                            },
+                            event: 'tap'
+                        }]
+    	            }
+    	        ]
+    	});
         //get the configuration for the list
         var listConfiguration = this.getListConfiguration();
         commentStore=Ext.create('Ext.data.Store', {
@@ -158,19 +193,15 @@ Ext.application({
         	},commentList,formPanel,{xtype:'button',text:'등록',listeners:[{
                 fn: function(button, e, options) {
                 	var content=formPanel.down("#commentContent").getValue();
-                	post('http://hsb1.anak.kr:8080/HSB/user/auth', {
-            			username: loginUser
-            			, password: 'test'
+                	
+            		post(requestUrl+'/article/'+articleId+'/comment', {
+            			secureKey: generatedSecureKey,
+            			content:content
             		}, function(data) {
-            			post('http://hsb1.anak.kr:8080/HSB/article/'+articleId+'/comment', {
-            				secureKey: data.data.generatedSecureKey,
-            				content:content
-            			}, function(data) {
-            				commentStore.add(data.data);
-            				formPanel.down("#commentContent").setValue("");
-            			});
-            			 
+            			commentStore.add(data.data);
+            			formPanel.down("#commentContent").setValue("");
             		});
+            		
                 },
                 event: 'tap'
             }]}]
@@ -187,21 +218,17 @@ Ext.application({
             	listeners:[{
             		fn:function(button,e,options){
             			var content=postPanel.down('#postContent').getValue();
-            			post('http://hsb1.anak.kr:8080/HSB/user/auth', {
-                			username: loginUser
-                			, password: 'test'
+            			
+                		post(requestUrl+'/'+loginUser, {
+                			secureKey: generatedSecureKey,
+                			content:content
                 		}, function(data) {
-                			post('http://hsb1.anak.kr:8080/HSB/'+loginUser, {
-                				secureKey: data.data.generatedSecureKey,
-                				content:content
-                			}, function(data) {
-                				rootPanel.setActiveItem(0);
-                                rootPanel.down("#postBtn").show();
-                                rootPanel.down("#backBtn").hide();
-                                getTimeLineList();
-                			});
-                			 
+                			rootPanel.setActiveItem(1);
+                            rootPanel.down("#postBtn").show();
+                            rootPanel.down("#backBtn").hide();
+                            getTimeLineList();
                 		});
+                		
             		},
             		event:'tap'
             	}]
@@ -225,7 +252,7 @@ Ext.application({
                             fn: function(button, e, options) {
                             	rootPanel.getLayout().setAnimation({type: "slide", direction: "right"});
                                 button.hide();	
-                                rootPanel.setActiveItem(0);
+                                rootPanel.setActiveItem(1);
                                 if(followBtn){
                                 	rootPanel.down("#followBtn").show();
                                 }
@@ -243,13 +270,14 @@ Ext.application({
                     	xtype:'button',
                     	itemId:'postBtn',
                     	ui:'action',
+                    	hidden:true,
                     	text: 'Write',
                     	listeners:[{
                     		fn: function(button,e,options){
                     			rootPanel.getLayout().setAnimation({type: "slide", direction: "left"});
                     			button.hide();
                     			rootPanel.down("#backBtn").show();
-                    			rootPanel.setActiveItem(2);
+                    			rootPanel.setActiveItem(3);
                     		},
                     		event:'tap'
                     	}]
@@ -261,19 +289,15 @@ Ext.application({
                 		text:'Follow',
                 		listeners:[{
                 			fn:function(button,e,options){
-                				post('http://hsb1.anak.kr:8080/HSB/user/auth', {
-                					username: loginUser
-                					, password: 'test'
+                				
+                				post(requestUrl+'/'+nowUser+'/follow', {
+                					secureKey: generatedSecureKey
                 				}, function(data) {
-                					post('http://hsb1.anak.kr:8080/HSB/'+nowUser+'/follow', {
-                						secureKey: data.data.generatedSecureKey
-                					}, function(data) {
-                						console.log(data);
-                						alert(nowUser+'님을 팔로우합니다.');
-                						showTimeLine();
-                					});
-                					 
+                					console.log(data);
+                					alert(nowUser+'님을 팔로우합니다.');
+                					showTimeLine();
                 				});
+                				
                 			},event:'tap'
                 		}]
                 	},{
@@ -284,24 +308,36 @@ Ext.application({
                 		text:'unFollow',
                 		listeners:[{
                 			fn:function(button,e,options){
-                				post('http://hsb1.anak.kr:8080/HSB/user/auth', {
-                					username: loginUser
-                					, password: 'test'
+                				
+                				del(requestUrl+'/'+nowUser+'/follow', {
+                					secureKey: generatedSecureKey
                 				}, function(data) {
-                					del('http://hsb1.anak.kr:8080/HSB/'+nowUser+'/follow', {
-                						secureKey: data.data.generatedSecureKey
-                					}, function(data) {
-                						console.log(data);
-                						alert(nowUser+'님을 언팔로우합니다.');
-                						showTimeLine();
-                					});
-                					 
+                					console.log(data);
+                					alert(nowUser+'님을 언팔로우합니다.');
+                					showTimeLine();
+                				});
+                				
+                			},event:'tap'
+                		}]
+                	},{
+                		xtype:'button',
+                		itemId:'moveBtn',
+                		ui:'action',
+                		hidden:true,
+                		text:'move',
+                		listeners:[{
+                			fn:function(button,e,options){
+                				Ext.Msg.prompt('Move', '이동할 친구의 id를 입력해 주세요.', function(buttonId,value) {
+                					console.log(buttonId+','+value);
+                					if(buttonId=='ok'){
+                    					showUserHome(value);
+                					}
                 				});
                 			},event:'tap'
                 		}]
                 	}
                 ]
-            },listConfiguration,contentPanel,postPanel]
+            },loginPanel,listConfiguration,contentPanel,postPanel]
         });
 
         //if the device is not a phone, we want to create a centered panel and put the list
@@ -349,7 +385,7 @@ Ext.application({
             fields: ['content','writerId', 'writerUsername','writerNickname','writeDate','commentCount','id','version'],
         });
         
-        getTimeLineList();
+        //getTimeLineList();
         postBtn=true;
        
         
@@ -362,7 +398,7 @@ Ext.application({
             itemTpl: [
                       '<div><b>{writerNickname}</b><br/>',
                       '{content} ',
-                      '{writeDate}</div>',
+                      '</div>',
                       '<div style="text-align:right">댓글 {commentCount}개</div>'
                       ],
 
@@ -371,14 +407,14 @@ Ext.application({
             listeners:[{
                 fn: function(dataview, index, target, record, e, options){
                 	rootPanel.getLayout().setAnimation({type: "slide", direction: "left"});
-                	rootPanel.setActiveItem(1);
+                	rootPanel.setActiveItem(2);
                 	rootPanel.down("#backBtn").show();
                 	rootPanel.down("#postBtn").hide();
                 	rootPanel.down("#postPreview").setData(record.data);
                 	articleId= record.data.id;
                 	commentStore.removeAll(false);
                 	//댓글 가져오기
-                	get('http://hsb1.anak.kr:8080/HSB/article/'+articleId+'/comments', {
+                	get(requestUrl+'/article/'+articleId+'/comments', {
         			}, function(data) {
         				console.log(data.list);
         				commentStore.add(data.list);

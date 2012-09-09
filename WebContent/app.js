@@ -138,7 +138,6 @@ Ext.application({
                             	}, function(data) {
                             		loginUser=data.data.username;
                             		generatedSecureKey=data.data.generatedSecureKey;
-                            		console.log(loginUser+','+generatedSecureKey);
                             		showTimeLine();
                             		rootPanel.setActiveItem(1);
                             		rootPanel.down("#moveBtn").show();
@@ -293,7 +292,6 @@ Ext.application({
                 				post(requestUrl+'/'+nowUser+'/follow', {
                 					secureKey: generatedSecureKey
                 				}, function(data) {
-                					console.log(data);
                 					alert(nowUser+'님을 팔로우합니다.');
                 					showTimeLine();
                 				});
@@ -312,7 +310,6 @@ Ext.application({
                 				del(requestUrl+'/'+nowUser+'/follow', {
                 					secureKey: generatedSecureKey
                 				}, function(data) {
-                					console.log(data);
                 					alert(nowUser+'님을 언팔로우합니다.');
                 					showTimeLine();
                 				});
@@ -328,7 +325,6 @@ Ext.application({
                 		listeners:[{
                 			fn:function(button,e,options){
                 				Ext.Msg.prompt('Move', '이동할 친구의 id를 입력해 주세요.', function(buttonId,value) {
-                					console.log(buttonId+','+value);
                 					if(buttonId=='ok'){
                     					showUserHome(value);
                 					}
@@ -416,13 +412,25 @@ Ext.application({
                 	//댓글 가져오기
                 	get(requestUrl+'/article/'+articleId+'/comments', {
         			}, function(data) {
-        				console.log(data.list);
         				commentStore.add(data.list);
         			});
                 	
                 },
                 event: 'itemtap'
-            }]
+            }],plugins: [
+                         {
+                             xclass: 'Ext.plugin.PullRefresh',
+                             pullRefreshText: 'Pull down for more new Tweets!',
+                             refreshFn: function(plugin) {
+                            	 if(loginUser==nowUser){
+                            		 getTimeLineList();
+                            	 }else{
+                            		 getTimeLineList(nowUser);
+                            	 }
+                             }
+                            	 
+                         }
+                     ]
         };
     }
 });
